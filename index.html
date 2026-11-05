@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>統合サイドパネル (カウンター ＆ コピーリスト)</title>
+  <title>サイドパネル</title>
   <style>
     * {
       box-sizing: border-box;
@@ -596,29 +596,29 @@
       <div class="panel-title-area">
         <!-- ハンバーガーメニューボタン -->
         <button class="hamburger-btn" id="hamburgerBtn" title="アプリを切り替え">☰</button>
-        <!-- アプリ選択メニュー（順番変更：コピーリストが上） -->
+        <!-- アプリ選択メニュー（デフォルトでコピーリストをメイン・アクティブに設定） -->
         <div class="hamburger-menu" id="hamburgerMenu">
-          <button class="hamburger-menu-item" data-app="copy">コピーリスト</button>
-          <button class="hamburger-menu-item active" data-app="counter">カウンター & ストップウォッチ</button>
+          <button class="hamburger-menu-item active" data-app="copy">コピーリスト</button>
+          <button class="hamburger-menu-item" data-app="counter">カウンター & ストップウォッチ</button>
         </div>
-        <span class="panel-title" id="panelTitleText">カウンター</span>
+        <span class="panel-title" id="panelTitleText">コピーリスト</span>
       </div>
 
       <div class="header-actions">
-        <!-- カウンター用アクション -->
-        <div class="app-action-group counter-actions">
+        <!-- カウンター用アクション（初期非表示） -->
+        <div class="app-action-group counter-actions" style="display: none;">
           <button class="action-main-btn" id="openCounterModal">＋ 新規追加</button>
         </div>
-        <!-- コピー用アクション -->
-        <div class="app-action-group copy-actions" style="display: none;">
+        <!-- コピー用アクション（初期表示） -->
+        <div class="app-action-group copy-actions">
           <button class="action-main-btn memo-open-btn" id="openMemoModal">🏢 顧客管理</button>
           <button class="action-main-btn" id="openCopyModal">＋ 追加</button>
         </div>
       </div>
     </div>
 
-    <!-- ================= 1. カウンタービュー ================= -->
-    <div class="app-view counter-app-view active" id="counterAppView">
+    <!-- ================= 1. カウンタービュー（初期非表示） ================= -->
+    <div class="app-view counter-app-view" id="counterAppView">
       <div class="panel-body">
         <div class="index-bar" id="counterIndexBar" title="カテゴリで絞り込み"></div>
         <div class="card-list" id="counterCardList"></div>
@@ -646,8 +646,8 @@
       </div>
     </div>
 
-    <!-- ================= 2. コピーリストビュー ================= -->
-    <div class="app-view copy-app-view" id="copyAppView">
+    <!-- ================= 2. コピーリストビュー（初期表示） ================= -->
+    <div class="app-view copy-app-view active" id="copyAppView">
       <div class="panel-body">
         <div class="index-bar" id="copyIndexBar" title="ドラッグ＆ドロップで並び替え可能"></div>
         <div class="card-list" id="copyCardList"></div>
