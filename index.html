@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>統合サイドパネル (カウンター ＆ コピーリスト)</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      display: flex;
+      background-color: #f0f2f5;
+      color: #2c3e50;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* サイドパネル全体 */
+    .side-panel {
+      width: 410px;
+      max-width: 100vw;
+      background-color: #ffffff;
+      border-right: 1px solid rgba(0, 0, 0, 0.08);
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.04);
+      padding: 16px 14px 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #eef2f7;
+      padding-bottom: 10px;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .panel-title-area {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ハンバーガーメニューボタン */
+    .hamburger-btn {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      width: 32px;
+      height: 32px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .hamburger-btn:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    /* ハンバーガーメニューのドロップダウン */
+    .hamburger-menu {
+      position: absolute;
+      top: 44px;
+      left: 0;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      display: none;
+      flex-direction: column;
+      z-index: 300;
+      min-width: 180px;
+      overflow: hidden;
+    }
+    .hamburger-menu.show {
+      display: flex;
+    }
+    .hamburger-menu-item {
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #334155;
+      background: transparent;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hamburger-menu-item:hover {
+      background: #f1f5f9;
+      color: #2563eb;
+    }
+    .hamburger-menu-item.active {
+      background: #eff6ff;
+      color: #2563eb;
+    }
+
+    .panel-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #1e293b;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .action-main-btn {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .action-main-btn:hover {
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
+      box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .memo-open-btn {
+      background: linear-gradient(135deg, #475569, #334155);
+      box-shadow: 0 2px 4px rgba(71, 85, 105, 0.2);
+    }
+    .memo-open-btn:hover {
+      background: linear-gradient(135deg, #334155, #1e293b);
+    }
+
+    .sub-action-btn {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .sub-action-btn:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .app-view {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .app-view.active {
+      display: flex;
+    }
+
+    .panel-body {
+      display: flex;
+      flex: 1;
+      gap: 10px;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .bottom-pinned-container {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .panel-footer {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      padding-top: 6px;
+      border-top: 1px solid #eef2f7;
+      flex-shrink: 0;
+    }
+
+    /* インデックスバー共通 */
+    .index-bar {
+      width: 48px;
+      background-color: #ffffff;
+      border: 2px solid #0f172a;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2px;
+      gap: 4px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      user-select: none;
+      flex-shrink: 0;
+      height: 100%;
+    }
+    .index-bar::-webkit-scrollbar { display: none; }
+
+    .index-item {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #475569;
+      background-color: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 6px 2px;
+      width: 38px;
+      flex: 0 0 auto;
+      min-height: 105px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      letter-spacing: 1px;
+      line-height: 1.2;
+      white-space: nowrap;
+      margin: 0;
+    }
+    .index-item:hover {
+      background-color: #eff6ff;
+      border-color: #3b82f6;
+      color: #2563eb;
+    }
+    .index-item.active {
+      background-color: #2563eb;
+      border-color: #2563eb;
+      color: #ffffff;
+      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    }
+    .index-item.all-item {
+      color: #0f172a;
+      font-size: 0.85rem;
+      font-weight: 700;
+      background-color: #cbd5e1;
+      border: none;
+      border-bottom: 2px solid #0f172a;
+      margin-bottom: 2px;
+      padding: 4px 0;
+      writing-mode: horizontal-tb;
+      width: 100%;
+      flex: 0 0 auto;
+      height: 30px;
+      min-height: 30px;
+      max-height: 30px;
+      border-radius: 9px 9px 0 0;
+      cursor: pointer;
+    }
+    .index-item.all-item.active {
+      background-color: #475569;
+      border-color: #475569;
+      color: #ffffff;
+    }
+
+    /* コピー用インデックスバー */
+    #copyIndexBar {
+      width: 42px;
+      gap: 2px;
+      overflow-y: hidden;
+    }
+    #copyIndexBar .index-item {
+      width: 32px;
+      flex: 1;
+      max-height: 62px;
+      min-height: auto;
+      border-radius: 5px;
+      padding: 2px 1px;
+      cursor: grab;
+    }
+    #copyIndexBar .index-item:active { cursor: grabbing; }
+    #copyIndexBar .index-item.dragging { opacity: 0.4; border: 2px dashed #2563eb; }
+    #copyIndexBar .index-item.all-item { height: 32px; max-height: 32px; cursor: pointer; }
+
+    /* 顧客管理モーダル内のインデックスバー（高さ固定・常時10個収まるサイズ） */
+    #companyIndexBar {
+      width: 36px;
+      gap: 2px;
+      overflow-y: hidden;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    #companyIndexBar .index-item {
+      width: 28px;
+      flex: 0 0 calc((100% - 32px) / 10);
+      height: auto;
+      min-height: 0;
+      max-height: none;
+      border-radius: 4px;
+      padding: 0;
+      font-size: 0.68rem;
+    }
+    #companyIndexBar .index-item.all-item {
+      height: 26px;
+      min-height: 26px;
+      max-height: 26px;
+      flex: 0 0 26px;
+      font-size: 0.7rem;
+    }
+
+    .card-list {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 2px;
+      scroll-behavior: smooth;
+    }
+
+    .group-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    }
+    .group-card.dragging { opacity: 0.4; border: 2px dashed #2563eb; }
+
+    .group-header {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #334155;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 5px;
+      cursor: grab;
+      user-select: none;
+    }
+    .group-header:active { cursor: grabbing; }
+
+    .group-items-container { display: flex; flex-direction: column; gap: 8px; }
+
+    .item-block {
+      position: relative;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: background-color 0.15s, border-color 0.15s;
+    }
+    .item-block.dragging { opacity: 0.4; border: 2px dashed #2563eb; }
+    .item-block:hover { border-color: #cbd5e1; background: #ffffff; }
+
+    .item-top-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; position: relative; }
+    
+    .item-title-text { 
+      font-size: 0.8rem; 
+      font-weight: 700; 
+      color: #334155; 
+      white-space: nowrap; 
+      overflow: visible; 
+      flex: 1; 
+    }
+    .item-actions { display: flex; gap: 4px; flex-shrink: 0; align-items: center; }
+
+    .action-btn {
+      background: none; border: none; font-size: 0.7rem; cursor: pointer; padding: 3px 6px; border-radius: 4px; font-weight: 600;
+      transition: background-color 0.15s, color 0.15s;
+    }
+    .reset-btn { color: #64748b; background: #f1f5f9; }
+    .reset-btn:hover { background: #e2e8f0; color: #334155; }
+
+    .time-paste-btn {
+      background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.68rem; padding: 3px 8px;
+      border-radius: 4px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;
+    }
+    .time-paste-btn:hover { background: #bae6fd; }
+
+    .menu-btn {
+      background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; font-size: 0.75rem; padding: 2px 7px;
+      border-radius: 4px; font-weight: 700; cursor: pointer;
+    }
+    .menu-btn:hover { background: #e2e8f0; }
+
+    .context-menu {
+      position: absolute; top: 28px; right: 0; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; flex-direction: column; z-index: 50; min-width: 90px; overflow: hidden;
+    }
+    .context-menu.show { display: flex; }
+    .context-menu-item { padding: 6px 12px; font-size: 0.75rem; font-weight: 600; color: #334155; background: transparent; border: none; text-align: left; cursor: pointer; }
+    .context-menu-item:hover { background: #f1f5f9; }
+    .context-menu-item.delete { color: #dc2626; }
+    .context-menu-item.delete:hover { background: #fef2f2; }
+
+    .item-dual-body { display: flex; gap: 6px; align-items: stretch; }
+
+    .call-info-wrapper { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .call-info-box {
+      background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; display: flex;
+      flex-direction: column; justify-content: center; font-size: 0.65rem; color: #334155; min-width: 0; cursor: pointer;
+    }
+    .call-info-box:hover { background-color: #eff6ff; border-color: #3b82f6; }
+    .call-info-period { font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .call-info-account { white-space: pre-wrap; word-break: break-all; font-weight: 700; color: #0f172a; line-height: 1.3; }
+
+    .call-counters-section, .normal-counters-section { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .call-counters-section { flex: 1.4; gap: 3px; }
+    .call-counters-section .sub-counter-row { padding: 2px 4px; }
+    .normal-counters-section .sub-counter-row { padding: 12px 4px; }
+
+    .sub-counter-row { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; display: flex; align-items: center; gap: 2px; width: 100%; }
+    .sub-counter-label {
+      font-size: 0.7rem; font-weight: 700; color: #475569; width: 28px; flex-shrink: 0; text-align: center; cursor: pointer; border-radius: 3px; padding: 2px 0;
+    }
+    .sub-counter-label:hover { background-color: #eff6ff; color: #2563eb; }
+
+    .counter-val-container { display: flex; align-items: center; flex: 1; min-width: 0; }
+    
+    .counter-input {
+      font-size: 1rem; font-weight: 800; color: #0f172a; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      width: 100%; text-align: center; border: 1px solid transparent; border-radius: 4px; padding: 1px 0; background: transparent; outline: none;
+    }
+    .counter-input:hover { background-color: #f1f5f9; border-color: #cbd5e1; }
+    .counter-input:focus { background-color: #ffffff; border-color: #2563eb; }
+
+    .counter-btn-group { display: flex; gap: 2px; flex-shrink: 0; }
+    .counter-btn {
+      width: 22px; height: 24px; display: flex; align-items: center; justify-content: center;
+      border-radius: 4px; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+    }
+    .counter-btn.minus { color: #dc2626; }
+    .counter-btn.minus:hover { background-color: #fef2f2; }
+    .counter-btn.plus { color: #16a34a; }
+    .counter-btn.plus:hover { background-color: #f0fdf4; }
+
+    /* ワンクリックコピー用 */
+    .card-header-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .card-label-area { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+    .drag-handle-item { cursor: grab; font-size: 0.8rem; color: #94a3b8; padding: 0 2px; user-select: none; flex-shrink: 0; }
+    
+    .card-label { 
+      font-size: 0.75rem; 
+      font-weight: 700; 
+      color: #475569; 
+      white-space: nowrap; 
+      overflow: visible; 
+      flex: 1; 
+      min-width: 0; 
+    }
+    .copy-feedback {
+      font-size: 0.65rem; font-weight: 700; color: #16a34a; background-color: #dcfce7;
+      border: 1px solid #bbf7d0; padding: 1px 6px; border-radius: 4px; opacity: 0; transition: opacity 0.2s ease; flex-shrink: 0;
+    }
+    .copy-feedback.show { opacity: 1; }
+
+    .copy-btn {
+      width: 100%; text-align: left; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px;
+      padding: 8px 10px; font-size: 0.85rem; font-weight: 600; color: #1e293b; cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center; overflow: hidden;
+    }
+    .copy-btn-text { white-space: nowrap; flex: 1; min-width: 0; display: inline-block; overflow: hidden; text-overflow: ellipsis; }
+    .copy-btn:hover { background-color: #eff6ff; border-color: #3b82f6; color: #2563eb; }
+    .copy-btn::after { content: "📋"; font-size: 0.75rem; opacity: 0.6; margin-left: 6px; flex-shrink: 0; }
+
+    /* ストップウォッチドック */
+    .stopwatch-dock {
+      background: #ADE0EE; border: 1px solid #8ec5d5; border-radius: 12px; padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05); flex-shrink: 0;
+    }
+    .dock-header { display: flex; justify-content: space-between; align-items: center; }
+    .dock-title { font-size: 0.8rem; font-weight: 700; color: #1e3a47; display: flex; align-items: center; gap: 5px; }
+    .sw-display-dock {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 1.95rem; font-weight: 800; color: #0f2733; text-align: center;
+      background: rgba(255, 255, 255, 0.65); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.9);
+    }
+    .sw-display-dock .millis { font-size: 1.25rem; color: #396779; }
+    .sw-controls-dock { display: flex; gap: 8px; }
+    .sw-btn {
+      flex: 1; padding: 9px 0; font-size: 0.85rem; font-weight: 700; border-radius: 6px; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .sw-btn.start { background: #10b981; color: #ffffff; }
+    .sw-btn.start:hover { background: #059669; }
+    .sw-btn.pause { background: #f59e0b; color: #ffffff; }
+    .sw-btn.pause:hover { background: #d97706; }
+    .sw-btn.reset { background: #ffffff; color: #334155; border: 1px solid #94b8c5; }
+    .sw-btn.reset:hover { background: #f8fafc; }
+
+    /* トースト */
+    .toast-msg {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background-color: #0f172a; color: #ffffff; padding: 6px 14px; border-radius: 6px;
+      font-size: 0.75rem; font-weight: 600; opacity: 0; pointer-events: none; transition: all 0.25s ease; z-index: 2000;
+    }
+    .toast-msg.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* モーダル共通 */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background-color: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px);
+      display: flex; justify-content: center; align-items: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 1000;
+    }
+    .modal-overlay.show { opacity: 1; pointer-events: auto; }
+    .modal-content {
+      background: #ffffff; width: 420px; max-width: 95vw; border-radius: 12px; padding: 20px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; gap: 14px;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .memo-modal-content { width: 420px; height: 88vh; max-height: 88vh; }
+    .modal-title { font-size: 1.05rem; font-weight: 700; color: #0f172a; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group.flex-grow { flex: 1; min-height: 0; }
+    .form-label { font-size: 0.75rem; font-weight: 700; color: #475569; }
+    .form-input, .form-textarea {
+      width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem;
+    }
+    .form-textarea { resize: vertical; height: 80px; }
+    .form-input:focus, .form-textarea:focus { outline: none; border-color: #2563eb; }
+    .modal-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+    .shortcut-hint { font-size: 0.7rem; color: #94a3b8; }
+    .btn-submit {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 7px 16px;
+      border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 700;
+    }
+    .btn-submit:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); }
+
+    .address-book-body { display: flex; gap: 10px; flex: 1; min-height: 0; overflow: hidden; margin-top: 4px; }
+    .company-list-container { flex: 1; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 8px; padding-right: 2px; min-height: 0; }
+    .company-item-row { display: flex; flex-direction: column; gap: 6px; background: #ffffff; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; }
+    .company-item-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .company-name-text { font-size: 0.8rem; font-weight: 700; color: #0f172a; white-space: nowrap; flex: 1; min-width: 0; }
+    .id-copy-box, .email-copy-box {
+      width: 100%; text-align: left; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0;
+      font-size: 0.8rem; font-weight: 600; color: #334155; cursor: pointer; display: flex; align-items: stretch; user-select: none; overflow: hidden; position: relative;
+    }
+    .copy-box-label {
+      background-color: #f1f5f9; border-right: 1px solid #cbd5e1; padding: 6px 12px; font-weight: 700; font-size: 0.75rem; color: #475569;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 50px;
+    }
+    .copy-box-val { padding: 6px 10px; white-space: nowrap; flex: 1; min-width: 0; display: flex; align-items: center; }
+    .id-copy-box:hover, .email-copy-box:hover { background-color: #eff6ff; border-color: #2563eb; color: #2563eb; }
+    .id-copy-box::after, .email-copy-box::after { content: "📋"; font-size: 0.7rem; opacity: 0.5; flex-shrink: 0; padding-right: 10px; display: flex; align-items: center; }
+    .btn-add-toggle { background: #16a34a; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 700; }
+    .company-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .btn-edit-sub { background: #2563eb; color: white; border: none; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; font-weight: 600; }
+    .btn-del-sub { background: #dc2626; color: white; border: none; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <!-- サイドパネル -->
+  <aside class="side-panel" id="sidePanel">
+    <div class="panel-header">
+      <div class="panel-title-area">
+        <!-- ハンバーガーメニューボタン -->
+        <button class="hamburger-btn" id="hamburgerBtn" title="アプリを切り替え">☰</button>
+        <!-- アプリ選択メニュー（順番変更：コピーリストが上） -->
+        <div class="hamburger-menu" id="hamburgerMenu">
+          <button class="hamburger-menu-item" data-app="copy">コピーリスト</button>
+          <button class="hamburger-menu-item active" data-app="counter">カウンター & ストップウォッチ</button>
+        </div>
+        <span class="panel-title" id="panelTitleText">カウンター</span>
+      </div>
+
+      <div class="header-actions">
+        <!-- カウンター用アクション -->
+        <div class="app-action-group counter-actions">
+          <button class="action-main-btn" id="openCounterModal">＋ 新規追加</button>
+        </div>
+        <!-- コピー用アクション -->
+        <div class="app-action-group copy-actions" style="display: none;">
+          <button class="action-main-btn memo-open-btn" id="openMemoModal">🏢 顧客管理</button>
+          <button class="action-main-btn" id="openCopyModal">＋ 追加</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 1. カウンタービュー ================= -->
+    <div class="app-view counter-app-view active" id="counterAppView">
+      <div class="panel-body">
+        <div class="index-bar" id="counterIndexBar" title="カテゴリで絞り込み"></div>
+        <div class="card-list" id="counterCardList"></div>
+      </div>
+
+      <div class="bottom-pinned-container">
+        <div class="stopwatch-dock" id="stopwatchDock">
+          <div class="dock-header">
+            <span class="dock-title">⏱ ストップウォッチ</span>
+          </div>
+          <div class="sw-display-dock" id="swDisplay">
+            00:00:00<span class="millis">.00</span>
+          </div>
+          <div class="sw-controls-dock">
+            <button class="sw-btn start" id="swStartBtn">▶ スタート</button>
+            <button class="sw-btn reset" id="swResetBtn">↺ リセット</button>
+          </div>
+        </div>
+
+        <div class="panel-footer">
+          <button class="sub-action-btn" id="exportCounterBtn" title="データをJSON形式で保存">📤 エクスポート</button>
+          <button class="sub-action-btn" id="importCounterBtn" title="JSONファイルから復元">📥 インポート</button>
+          <input type="file" id="importCounterFileInput" accept=".json" style="display: none;">
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 2. コピーリストビュー ================= -->
+    <div class="app-view copy-app-view" id="copyAppView">
+      <div class="panel-body">
+        <div class="index-bar" id="copyIndexBar" title="ドラッグ＆ドロップで並び替え可能"></div>
+        <div class="card-list" id="copyCardList"></div>
+      </div>
+
+      <div class="panel-footer">
+        <button class="sub-action-btn" id="exportCopyBtn" title="データをJSON形式で保存">📤 エクスポート</button>
+        <button class="sub-action-btn" id="importCopyBtn" title="JSONファイルから復元">📥 インポート</button>
+        <input type="file" id="importCopyFileInput" accept=".json" style="display: none;">
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ================= 各種モーダル ================= -->
+
+  <!-- カウンター追加・編集用モーダル -->
+  <div class="modal-overlay" id="counterModalOverlay">
+    <div class="modal-content">
+      <div class="modal-title" id="counterModalTitle">新しいカウンターを追加</div>
+      <div class="form-group">
+        <label class="form-label">カテゴリ（グループ名）</label>
+        <input type="text" id="inputCategory" class="form-input" placeholder="業務、タスク、日常など" list="categorySuggestions">
+        <datalist id="categorySuggestions"></datalist>
+      </div>
+      <div class="form-group">
+        <label class="form-label">項目名（ラベル）</label>
+        <input type="text" id="inputLabel" class="form-input" placeholder="例: メール送信数、架電件数">
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+        <input type="checkbox" id="inputIsCallList" style="width: 16px; height: 16px; cursor: pointer;">
+        <label for="inputIsCallList" style="font-size: 0.8rem; font-weight: 700; color: #334155; cursor: pointer;">架電リストとして作成する</label>
+      </div>
+      <div id="callListAccordion" style="display: none; flex-direction: column; gap: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+        <div class="form-group">
+          <label class="form-label">アカウント名（改行可能）</label>
+          <textarea id="inputAccountName" class="form-input" placeholder="例: アカウントA&#10;アカウントB" style="height: 68px; min-height: 68px; max-height: 120px; resize: vertical; line-height: 1.4;"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">抽出期間（開始日と終了日）</label>
+          <div style="display: flex; gap: 6px; align-items: center; width: 100%; min-width: 0;">
+            <input type="date" id="inputStartDate" class="form-input" style="flex: 1; min-width: 0;" title="開始日を選択">
+            <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; flex-shrink: 0;">〜</span>
+            <input type="date" id="inputEndDate" class="form-input" style="flex: 1; min-width: 0;" title="終了日を選択">
+          </div>
+          <input type="hidden" id="inputExtractionPeriod">
+          <span style="font-size: 0.68rem; color: #64748b; margin-top: 2px;">※自動で「MM/DD-MM/DD」形式に反映されます</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span class="shortcut-hint">Ctrl + Enter で保存</span>
+        <button class="btn-submit" id="saveCounterBtn">保存する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- コピー用項目追加・編集用モーダル -->
+  <div class="modal-overlay" id="copyModalOverlay">
+    <div class="modal-content">
+      <div class="modal-title" id="copyModalTitle">新しい項目を追加</div>
+      <div class="form-group">
+        <label class="form-label">インデックス登録名</label>
+        <input type="text" id="inputGroupFurigana" class="form-input" placeholder="会社、社名など" list="groupSuggestions">
+        <datalist id="groupSuggestions"></datalist>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ラベル（項目のタイトル）</label>
+        <input type="text" id="inputCopyLabel" class="form-input" placeholder="デフォルトなど">
+      </div>
+      <div class="form-group">
+        <label class="form-label">コピーするテキスト</label>
+        <textarea id="inputCopyText" class="form-textarea" placeholder="コピーさせたい内容を入力"></textarea>
+      </div>
+      <div class="modal-footer">
+        <span class="shortcut-hint">Ctrl + Enter で保存</span>
+        <button class="btn-submit" id="saveCopyBtn">追加する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 顧客管理用モーダル -->
+  <div class="modal-overlay" id="memoModalOverlay">
+    <div class="modal-content memo-modal-content">
+      <div class="modal-title" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>顧客管理</span>
+        <button class="btn-add-toggle" id="openAddCompanyModalBtn">＋ 新規追加</button>
+      </div>
+      <div class="form-group flex-grow">
+        <label class="form-label">登録済み一覧</label>
+        <div class="address-book-body">
+          <div class="index-bar" id="companyIndexBar" title="頭文字で絞り込み"></div>
+          <div class="company-list-container" id="companyListContainer"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span class="shortcut-hint">自動保存されます</span>
+        <button class="btn-submit" id="closeMemoBtn">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新規顧客セット追加用ポップアップ（モーダル） -->
+  <div class="modal-overlay" id="addCompanyModalOverlay">
+    <div class="modal-content" style="width: 360px;">
+      <div class="modal-title">新しいセットを追加</div>
+      <div class="form-group">
+        <label class="form-label">会社名</label>
+        <input type="text" id="newCompanyName" class="form-input" placeholder="会社名">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ふりがな</label>
+        <input type="text" id="newCompanyFurigana" class="form-input" placeholder="きょうふくどう等">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ID</label>
+        <input type="text" id="newCompanyId" class="form-input" placeholder="ID">
+      </div>
+      <div class="form-group">
+        <label class="form-label">メールアドレス</label>
+        <input type="email" id="newEmailAddress" class="form-input" placeholder="メールアドレス">
+      </div>
+      <div class="modal-footer">
+        <button class="sub-action-btn" onclick="closeAddCompanyModal()">キャンセル</button>
+        <button class="btn-submit" id="addCompanyBtn">登録する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 顧客情報編集用ポップアップ（モーダル） -->
+  <div class="modal-overlay" id="editCompanyModalOverlay">
+    <div class="modal-content" style="width: 360px;">
+      <div class="modal-title">顧客情報を編集</div>
+      <input type="hidden" id="editCompanyId">
+      <div class="form-group">
+        <label class="form-label">会社名</label>
+        <input type="text" id="editCompanyName" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ふりがな</label>
+        <input type="text" id="editCompanyFurigana" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ID</label>
+        <input type="text" id="editCompanyAccountId" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">メールアドレス</label>
+        <input type="email" id="editCompanyEmail" class="form-input">
+      </div>
+      <div class="modal-footer">
+        <button class="sub-action-btn" onclick="closeEditCompanyModal()">キャンセル</button>
+        <button class="btn-submit" id="saveEditCompanyBtn">保存する</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-msg" id="toastMsg"></div>
+
+  <script>
+    /* ================= 1. カウンター ＆ ストップウォッチ制御 ================= */
+    const COUNTERS_KEY = 'panel_counter_items_v35';
+    const STOPWATCH_KEY = 'panel_stopwatch_state_v35';
+    let counters = [];
+    let editingCounterId = null;
+    let selectedCategory = 'ALL';
+
+    let swRunning = false;
+    let swStartTime = 0;
+    let swElapsedTime = 0;
+    let swTimerInterval = null;
+
+    function loadCounterData() {
+      const saved = localStorage.getItem(COUNTERS_KEY);
+      if (saved) {
+        try { counters = JSON.parse(saved); } catch (e) { console.error(e); }
+      } else {
+        counters = [
+          { id: '1', category: '業務', label: '問い合わせ対応', value: 0, minutes: 0, isCallList: false },
+          { id: '2', category: '業務', label: '架電リストA', value: 0, countExtracted: 0, countCompleted: 0, countRemaining: 0, minutes: 0, isCallList: true, accountName: 'メイン顧客リスト', extractionPeriod: '10/11-10/31' },
+          { id: '3', category: '日常', label: '水分補給 (杯)', value: 0, minutes: 0, isCallList: false },
+          { id: '4', category: '日常', label: 'ストレッチ (回)', value: 0, minutes: 0, isCallList: false }
+        ];
+        saveCounterData();
+      }
+
+      const savedSw = localStorage.getItem(STOPWATCH_KEY);
+      if (savedSw) {
+        try {
+          const swData = JSON.parse(savedSw);
+          swElapsedTime = swData.elapsedTime || 0;
+          if (swData.running && swData.targetTimestamp) {
+            const now = Date.now();
+            if (now < swData.targetTimestamp) {
+              swElapsedTime += (swData.targetTimestamp - now);
+            }
+            swRunning = true;
+            swStartTime = now;
+            swTimerInterval = setInterval(updateSwDisplay, 30);
+            const btn = document.getElementById('swStartBtn');
+            if (btn) { btn.textContent = '❚❚ 一時停止'; btn.className = 'sw-btn pause'; }
+          }
+        } catch (e) { console.error(e); }
+      }
+    }
+
+    function saveCounterData() {
+      localStorage.setItem(COUNTERS_KEY, JSON.stringify(counters));
+    }
+
+    function saveStopwatchState() {
+      const currentMs = swRunning ? (Date.now() - swStartTime + swElapsedTime) : swElapsedTime;
+      const swData = { running: swRunning, elapsedTime: currentMs, targetTimestamp: swRunning ? Date.now() : null };
+      localStorage.setItem(STOPWATCH_KEY, JSON.stringify(swData));
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toastMsg');
+      if (!toast) return;
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => { toast.classList.remove('show'); }, 1600);
+    }
+
+    function copyTextToClipboard(text, labelName) {
+      if (!text && text !== 0) return;
+      navigator.clipboard.writeText(String(text)).then(() => {
+        showToast(`「${labelName}」をコピーしました: ${text}`);
+      }).catch(() => { showToast('コピーに失敗しました'); });
+    }
+
+    function renderCounterCards() {
+      const cardList = document.getElementById('counterCardList');
+      const indexBar = document.getElementById('counterIndexBar');
+      if (!cardList || !indexBar) return;
+
+      cardList.innerHTML = '';
+      indexBar.innerHTML = '';
+
+      const orderedCategories = [];
+      counters.forEach(item => {
+        const cat = item.category || '未分類';
+        if (!orderedCategories.includes(cat)) orderedCategories.push(cat);
+      });
+
+      const allItemEl = document.createElement('div');
+      allItemEl.className = `index-item all-item ${selectedCategory === 'ALL' ? 'active' : ''}`;
+      allItemEl.textContent = '全';
+      allItemEl.title = 'すべての項目を表示';
+      allItemEl.addEventListener('click', () => { selectedCategory = 'ALL'; renderCounterCards(); });
+      indexBar.appendChild(allItemEl);
+
+      orderedCategories.forEach(cat => {
+        const indexItemEl = document.createElement('div');
+        indexItemEl.className = `index-item ${selectedCategory === cat ? 'active' : ''}`;
+        indexItemEl.textContent = cat;
+        indexItemEl.title = `「${cat}」で絞り込み`;
+        indexItemEl.addEventListener('click', () => {
+          selectedCategory = (selectedCategory === cat) ? 'ALL' : cat;
+          renderCounterCards();
+        });
+        indexBar.appendChild(indexItemEl);
+      });
+
+      orderedCategories.forEach(cat => {
+        const items = counters.filter(i => (i.category || '未分類') === cat);
+        if (items.length === 0) return;
+        if (selectedCategory !== 'ALL' && selectedCategory !== cat) return;
+
+        const groupCard = document.createElement('div');
+        groupCard.className = 'group-card';
+
+        const header = document.createElement('div');
+        header.className = 'group-header';
+        header.innerHTML = `<span>📂 ${escapeHTML(cat)}</span><span>(${items.length})</span>`;
+        groupCard.appendChild(header);
+
+        const itemsContainer = document.createElement('div');
+        itemsContainer.className = 'group-items-container';
+
+        items.forEach(item => {
+          const itemBlock = document.createElement('div');
+          itemBlock.className = 'item-block';
+          itemBlock.setAttribute('draggable', 'true');
+          itemBlock.dataset.id = item.id;
+
+          itemBlock.addEventListener('dragstart', handleCounterDragStart);
+          itemBlock.addEventListener('dragover', handleCounterDragOver);
+          itemBlock.addEventListener('dragleave', handleCounterDragLeave);
+          itemBlock.addEventListener('drop', handleCounterDrop);
+          itemBlock.addEventListener('dragend', handleCounterDragEnd);
+
+          let leftSideHTML = '';
+          let rightSideHTML = '';
+
+          if (item.isCallList) {
+            leftSideHTML = `
+              <div class="call-info-wrapper">
+                <div class="call-info-box call-info-period" id="copy-period-${item.id}">${escapeHTML(item.extractionPeriod || '-')}</div>
+                <div class="call-info-box call-info-account" id="copy-account-${item.id}">${escapeHTML(item.accountName || '-')}</div>
+              </div>
+            `;
+            const valExt = item.countExtracted ?? item.value ?? 0;
+            const valCom = item.countCompleted ?? 0;
+            const valRem = item.countRemaining ?? 0;
+
+            rightSideHTML = `
+              <div class="call-counters-section">
+                <div class="sub-counter-row">
+                  <span class="sub-counter-label" id="copy-ext-${item.id}">抽出</span>
+                  <div class="counter-val-container"><input type="text" inputmode="numeric" id="input-ext-${item.id}" class="counter-input" value="${valExt}" onchange="updateSubCount('${item.id}', 'countExtracted', this.value)" onkeydown="handleInputKeydown(event, this)"></div>
+                  <div class="counter-btn-group">
+                    <button class="counter-btn minus" onclick="changeSubCount('${item.id}', 'countExtracted', -1)">－</button>
+                    <button class="counter-btn plus" onclick="changeSubCount('${item.id}', 'countExtracted', 1)">＋</button>
+                  </div>
+                </div>
+                <div class="sub-counter-row">
+                  <span class="sub-counter-label" id="copy-com-${item.id}">完了</span>
+                  <div class="counter-val-container"><input type="text" inputmode="numeric" id="input-com-${item.id}" class="counter-input" value="${valCom}" onchange="updateSubCount('${item.id}', 'countCompleted', this.value)" onkeydown="handleInputKeydown(event, this)"></div>
+                  <div class="counter-btn-group">
+                    <button class="counter-btn minus" onclick="changeSubCount('${item.id}', 'countCompleted', -1)">－</button>
+                    <button class="counter-btn plus" onclick="changeSubCount('${item.id}', 'countCompleted', 1)">＋</button>
+                  </div>
+                </div>
+                <div class="sub-counter-row">
+                  <span class="sub-counter-label" id="copy-rem-${item.id}">残り</span>
+                  <div class="counter-val-container"><input type="text" inputmode="numeric" id="input-rem-${item.id}" class="counter-input" value="${valRem}" onchange="updateSubCount('${item.id}', 'countRemaining', this.value)" onkeydown="handleInputKeydown(event, this)"></div>
+                  <div class="counter-btn-group">
+                    <button class="counter-btn minus" onclick="changeSubCount('${item.id}', 'countRemaining', -1)">－</button>
+                    <button class="counter-btn plus" onclick="changeSubCount('${item.id}', 'countRemaining', 1)">＋</button>
+                  </div>
+                </div>
+              </div>
+            `;
+          } else {
+            const minVal = (typeof item.minutes === 'number') ? item.minutes : (parseInt(item.minutes, 10) || 0);
+            leftSideHTML = `
+              <div class="normal-counters-section">
+                <div class="sub-counter-row">
+                  <span class="sub-counter-label" id="copy-val-${item.id}">件数</span>
+                  <div class="counter-val-container"><input type="text" inputmode="numeric" id="input-val-${item.id}" class="counter-input" value="${item.value}" onchange="updateCountValue('${item.id}', this.value)" onkeydown="handleInputKeydown(event, this)"></div>
+                  <div class="counter-btn-group">
+                    <button class="counter-btn minus" onclick="changeCount('${item.id}', -1)">－</button>
+                    <button class="counter-btn plus" onclick="changeCount('${item.id}', 1)">＋</button>
+                  </div>
+                </div>
+              </div>
+            `;
+            rightSideHTML = `
+              <div class="normal-counters-section">
+                <div class="sub-counter-row">
+                  <span class="sub-counter-label" id="copy-min-${item.id}">時間</span>
+                  <div class="counter-val-container"><input type="text" inputmode="numeric" id="input-min-${item.id}" class="counter-input" value="${minVal}" onchange="updateSubCount('${item.id}', 'minutes', this.value)" onkeydown="handleInputKeydown(event, this)"></div>
+                  <div class="counter-btn-group">
+                    <button class="counter-btn minus" onclick="changeSubCount('${item.id}', 'minutes', -1)">－</button>
+                    <button class="counter-btn plus" onclick="changeSubCount('${item.id}', 'minutes', 1)">＋</button>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+
+          let topActionsHTML = `<button class="action-btn reset-btn" onclick="resetCounter('${item.id}')">リセット</button>`;
+          if (!item.isCallList) {
+            topActionsHTML += `<button class="time-paste-btn" onclick="pasteCurrentTimeToCounter('${item.id}')">時間コピペ</button>`;
+          }
+          topActionsHTML += `
+            <div style="position: relative; display: inline-block;">
+              <button class="menu-btn" onclick="toggleContextMenu(event, '${item.id}')">☰</button>
+              <div class="context-menu" id="contextMenu-${item.id}">
+                <button class="context-menu-item" onclick="openEditCounterModal('${item.id}')">編集</button>
+                <button class="context-menu-item delete" onclick="deleteCounter('${item.id}')">削除</button>
+              </div>
+            </div>
+          `;
+
+          itemBlock.innerHTML = `
+            <div class="item-top-row">
+              <span class="item-title-text" title="${escapeHTML(item.label)}">${escapeHTML(item.label)}</span>
+              <div class="item-actions">${topActionsHTML}</div>
+            </div>
+            <div class="item-dual-body">${leftSideHTML}${rightSideHTML}</div>
+          `;
+          itemsContainer.appendChild(itemBlock);
+
+          if (item.isCallList) {
+            itemsContainer.querySelector(`#copy-period-${item.id}`).addEventListener('click', () => copyTextToClipboard(item.extractionPeriod || '', '期間'));
+            itemsContainer.querySelector(`#copy-account-${item.id}`).addEventListener('click', () => copyTextToClipboard(item.accountName || '', 'アカウント名'));
+            itemsContainer.querySelector(`#copy-ext-${item.id}`).addEventListener('click', () => copyTextToClipboard(itemsContainer.querySelector(`#input-ext-${item.id}`).value, '抽出数'));
+            itemsContainer.querySelector(`#copy-com-${item.id}`).addEventListener('click', () => copyTextToClipboard(itemsContainer.querySelector(`#input-com-${item.id}`).value, '完了数'));
+            itemsContainer.querySelector(`#copy-rem-${item.id}`).addEventListener('click', () => copyTextToClipboard(itemsContainer.querySelector(`#input-rem-${item.id}`).value, '残り数'));
+          } else {
+            itemsContainer.querySelector(`#copy-min-${item.id}`).addEventListener('click', () => copyTextToClipboard(itemsContainer.querySelector(`#input-min-${item.id}`).value, '時間'));
+            itemsContainer.querySelector(`#copy-val-${item.id}`).addEventListener('click', () => copyTextToClipboard(itemsContainer.querySelector(`#input-val-${item.id}`).value, '件数'));
+          }
+        });
+        groupCard.appendChild(itemsContainer);
+        cardList.appendChild(groupCard);
+      });
+      updateCategorySuggestions();
+    }
+
+    function toggleContextMenu(event, id) {
+      event.stopPropagation();
+      document.querySelectorAll('.context-menu').forEach(m => { if (m.id !== `contextMenu-${id}`) m.classList.remove('show'); });
+      const menu = document.getElementById(`contextMenu-${id}`);
+      if (menu) menu.classList.toggle('show');
+    }
+    window.addEventListener('click', () => { document.querySelectorAll('.context-menu').forEach(m => m.classList.remove('show')); });
+
+    let draggedCounterId = null;
+    function handleCounterDragStart(e) {
+      if (e.target.closest('button') || e.target.closest('input')) return;
+      draggedCounterId = this.dataset.id;
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+    function handleCounterDragOver(e) {
+      e.preventDefault();
+      const targetBlock = e.target.closest('.item-block');
+      if (targetBlock && targetBlock.dataset.id !== draggedCounterId) targetBlock.classList.add('drag-over');
+    }
+    function handleCounterDragLeave(e) {
+      const targetBlock = e.target.closest('.item-block');
+      if (targetBlock) targetBlock.classList.remove('drag-over');
+    }
+    function handleCounterDrop(e) {
+      e.preventDefault();
+      const targetBlock = e.target.closest('.item-block');
+      if (!targetBlock) return;
+      targetBlock.classList.remove('drag-over');
+      const targetId = targetBlock.dataset.id;
+      if (draggedCounterId === targetId) return;
+
+      const dIndex = counters.findIndex(i => i.id === draggedCounterId);
+      const tIndex = counters.findIndex(i => i.id === targetId);
+      if (dIndex !== -1 && tIndex !== -1) {
+        const [moved] = counters.splice(dIndex, 1);
+        counters.splice(tIndex, 0, moved);
+        saveCounterData();
+        renderCounterCards();
+      }
+    }
+    function handleCounterDragEnd() {
+      this.classList.remove('dragging');
+      document.querySelectorAll('.item-block').forEach(b => b.classList.remove('drag-over'));
+      draggedCounterId = null;
+    }
+
+    function changeCount(id, delta) {
+      const item = counters.find(i => i.id === id);
+      if (!item) return;
+      item.value = (Number(item.value) || 0) + delta;
+      saveCounterData();
+      renderCounterCards();
+    }
+    function updateCountValue(id, val) {
+      const item = counters.find(i => i.id === id);
+      if (!item) return;
+      const num = parseInt(val, 10);
+      item.value = isNaN(num) ? 0 : num;
+      saveCounterData();
+      renderCounterCards();
+    }
+    function changeSubCount(id, field, delta) {
+      const item = counters.find(i => i.id === id);
+      if (!item) return;
+      
+      const oldVal = Number(item[field]) || 0;
+      const newVal = oldVal + delta;
+      item[field] = newVal;
+
+      if (item.isCallList && field === 'countCompleted') {
+        const diff = newVal - oldVal;
+        const currentRem = Number(item.countRemaining) || 0;
+        item.countRemaining = currentRem - diff;
+      }
+
+      saveCounterData();
+      renderCounterCards();
+    }
+    function updateSubCount(id, field, val) {
+      const item = counters.find(i => i.id === id);
+      if (!item) return;
+      const num = parseInt(val, 10);
+      const newVal = isNaN(num) ? 0 : num;
+
+      if (item.isCallList && field === 'countCompleted') {
+        const oldVal = Number(item[field]) || 0;
+        const diff = newVal - oldVal;
+        const currentRem = Number(item.countRemaining) || 0;
+        item.countRemaining = currentRem - diff;
+      }
+
+      item[field] = newVal;
+      saveCounterData();
+      renderCounterCards();
+    }
+    function handleInputKeydown(e, el) { if (e.key === 'Enter') el.blur(); }
+
+    function resetCounter(id) {
+      const item = counters.find(i => i.id === id);
+      if (!item) return;
+      if (item.isCallList) {
+        item.countExtracted = 0; item.countCompleted = 0; item.countRemaining = 0;
+      } else {
+        item.value = 0; item.minutes = 0;
+      }
+      saveCounterData();
+      renderCounterCards();
+      showToast(`リセットしました`);
+    }
+
+    function pasteCurrentTimeToCounter(id) {
+      const item = counters.find(i => i.id === id);
+      if (!item || item.isCallList) return;
+      const currentMs = swRunning ? (Date.now() - swStartTime + swElapsedTime) : swElapsedTime;
+      const addMinutes = Math.max(1, Math.floor(currentMs / 60000));
+      const currentMin = (typeof item.minutes === 'number') ? item.minutes : (parseInt(item.minutes, 10) || 0);
+      item.minutes = currentMin + addMinutes;
+      saveCounterData();
+      renderCounterCards();
+      showToast(`${addMinutes}分 を加算しました`);
+    }
+
+    function updateCategorySuggestions() {
+      const suggestions = document.getElementById('categorySuggestions');
+      if (!suggestions) return;
+      const cats = [...new Set(counters.map(item => item.category || '未分類'))];
+      suggestions.innerHTML = '';
+      cats.forEach(c => { const opt = document.createElement('option'); opt.value = c; suggestions.appendChild(opt); });
+    }
+
+    function toggleCallListAccordion(show) {
+      const acc = document.getElementById('callListAccordion');
+      if (acc) acc.style.display = show ? 'flex' : 'none';
+    }
+    function formatDateToMMDD(ds) {
+      if (!ds) return '';
+      const p = ds.split('-');
+      return p.length === 3 ? `${p[1]}/${p[2]}` : '';
+    }
+    function setDateInputsFromPeriod(ps) {
+      const sInput = document.getElementById('inputStartDate');
+      const eInput = document.getElementById('inputEndDate');
+      sInput.value = ''; eInput.value = '';
+      if (!ps) return;
+      const dates = ps.split('-');
+      if (dates.length === 2) {
+        const yr = new Date().getFullYear();
+        const sP = dates[0].trim().split('/');
+        const eP = dates[1].trim().split('/');
+        if (sP.length === 2 && eP.length === 2) {
+          sInput.value = `${yr}-${sP[0].padStart(2, '0')}-${sP[1].padStart(2, '0')}`;
+          eInput.value = `${yr}-${eP[0].padStart(2, '0')}-${eP[1].padStart(2, '0')}`;
+        }
+      }
+    }
+
+    function openEditCounterModal(id) {
+      const item = counters.find(i => i.id === id);
+      if (!item) return;
+      editingCounterId = id;
+      document.getElementById('counterModalTitle').textContent = 'カウンターを編集';
+      document.getElementById('saveCounterBtn').textContent = '更新する';
+      document.getElementById('inputCategory').value = item.category || '';
+      document.getElementById('inputLabel').value = item.label || '';
+      document.getElementById('inputIsCallList').checked = !!item.isCallList;
+      toggleCallListAccordion(!!item.isCallList);
+      document.getElementById('inputAccountName').value = item.accountName || '';
+      document.getElementById('inputExtractionPeriod').value = item.extractionPeriod || '';
+      setDateInputsFromPeriod(item.extractionPeriod || '');
+      document.getElementById('counterModalOverlay').classList.add('show');
+    }
+    function closeCounterModal() {
+      document.getElementById('counterModalOverlay').classList.remove('show');
+      editingCounterId = null;
+    }
+    function handleSaveCounter() {
+      const cat = document.getElementById('inputCategory').value.trim() || '未分類';
+      const label = document.getElementById('inputLabel').value.trim();
+      const isCallList = document.getElementById('inputIsCallList').checked;
+      const accountName = document.getElementById('inputAccountName').value.trim();
+      const sVal = document.getElementById('inputStartDate').value;
+      const eVal = document.getElementById('inputEndDate').value;
+
+      let extractionPeriod = '';
+      if (sVal && eVal) extractionPeriod = `${formatDateToMMDD(sVal)}-${formatDateToMMDD(eVal)}`;
+      else if (sVal) extractionPeriod = `${formatDateToMMDD(sVal)}-${formatDateToMMDD(sVal)}`;
+
+      if (!label) { alert('項目名を入力してください。'); return; }
+
+      if (editingCounterId) {
+        const item = counters.find(i => i.id === editingCounterId);
+        if (item) {
+          item.category = cat; item.label = label; item.isCallList = isCallList;
+          item.accountName = accountName; item.extractionPeriod = extractionPeriod;
+        }
+      } else {
+        counters.push({
+          id: Date.now().toString(), category: cat, label, value: 0,
+          countExtracted: 0, countCompleted: 0, countRemaining: 0, minutes: 0,
+          isCallList, accountName, extractionPeriod
+        });
+      }
+      selectedCategory = cat;
+      saveCounterData();
+      renderCounterCards();
+      closeCounterModal();
+    }
+    function deleteCounter(id) {
+      if (confirm('削除してもよろしいですか？')) {
+        counters = counters.filter(i => i.id !== id);
+        saveCounterData();
+        renderCounterCards();
+      }
+    }
+
+    function formatTime(ms) {
+      const sec = Math.floor(ms / 1000);
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      const ms10 = Math.floor((ms % 1000) / 10);
+      return { main: `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`, millis: `.${String(ms10).padStart(2,'0')}` };
+    }
+    function updateSwDisplay() {
+      const d = document.getElementById('swDisplay');
+      if (!d) return;
+      const cur = swRunning ? (Date.now() - swStartTime + swElapsedTime) : swElapsedTime;
+      const t = formatTime(cur);
+      d.innerHTML = `${t.main}<span class="millis">${t.millis}</span>`;
+      if (swRunning) saveStopwatchState();
+    }
+    function toggleStopwatch() {
+      const btn = document.getElementById('swStartBtn');
+      if (!swRunning) {
+        swRunning = true; swStartTime = Date.now();
+        swTimerInterval = setInterval(updateSwDisplay, 30);
+        btn.textContent = '❚❚ 一時停止'; btn.className = 'sw-btn pause';
+      } else {
+        swRunning = false; clearInterval(swTimerInterval);
+        swElapsedTime += Date.now() - swStartTime;
+        btn.textContent = '▶ 再開'; btn.className = 'sw-btn start';
+        showToast('一時停止しました');
+      }
+      saveStopwatchState();
+    }
+    function resetStopwatch() {
+      swRunning = false; clearInterval(swTimerInterval); swElapsedTime = 0;
+      updateSwDisplay(); saveStopwatchState();
+      const btn = document.getElementById('swStartBtn');
+      btn.textContent = '▶ スタート'; btn.className = 'sw-btn start';
+      showToast('リセットしました');
+    }
+
+    function exportCounterData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ version: "35.0", counters }, null, 2));
+      const a = document.createElement('a');
+      a.href = dataStr; a.download = `counter_backup.json`;
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+    function importCounterData(e) {
+      const f = e.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = function(evt) {
+        try {
+          const imp = JSON.parse(evt.target.result);
+          if (imp.counters) { counters = imp.counters; saveCounterData(); renderCounterCards(); alert('インポート完了'); }
+        } catch { alert('失敗しました'); }
+        e.target.value = '';
+      };
+      r.readAsText(f);
+    }
+
+
+    /* ================= 2. コピーリスト ＆ 顧客管理ロジック ================= */
+    const COPY_ITEMS_KEY = 'one_click_copy_items_v15';
+    const COMPANIES_KEY = 'one_click_copy_companies_list';
+    let copyItems = [];
+    let companiesList = [];
+    let editingCopyId = null;
+    let selectedIndexName = 'ALL';
+    let selectedCompanyInitialChar = 'ALL';
+
+    function loadCopyData() {
+      const savedI = localStorage.getItem(COPY_ITEMS_KEY);
+      if (savedI) { try { copyItems = JSON.parse(savedI); } catch (e) { console.error(e); } }
+      else {
+        copyItems = [{ id: '1', group: 'メールテンプレート', groupFurigana: 'メールテンプレート', label: 'お礼と挨拶', text: 'お世話になっております。よろしくお願いいたします。' }];
+        saveCopyDataItems();
+      }
+
+      const savedC = localStorage.getItem(COMPANIES_KEY);
+      if (savedC) { try { companiesList = JSON.parse(savedC); } catch (e) { console.error(e); } }
+      else {
+        companiesList = [
+          { id: '1', company: '株式会社京福堂', furigana: 'きょうふくどう', accountId: 'support+kyoufuku@brand-patroller.com', email: 'ads+kyoufuku@coursesetter.jp' }
+        ];
+        saveCopyDataCompanies();
+      }
+    }
+    function saveCopyDataItems() { localStorage.setItem(COPY_ITEMS_KEY, JSON.stringify(copyItems)); }
+    function saveCopyDataCompanies() { localStorage.setItem(COMPANIES_KEY, JSON.stringify(companiesList)); }
+
+    function katakanaToHiragana(src) {
+      if (!src) return '';
+      return src.replace(/[\u30a1-\u30f6]/g, m => String.fromCharCode(m.charCodeAt(0) - 0x60));
+    }
+    function removeKanji(str) {
+      if (!str) return '';
+      return str.replace(/[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/g, '');
+    }
+    function getExactInitialChar(str) {
+      if (!str) return '#';
+      if (str.trim() === 'クラ') return 'クラ';
+      const clean = removeKanji(str);
+      const hira = katakanaToHiragana((clean || str).trim());
+      const ch = hira.charAt(0);
+      if (/[a-zA-Z]/.test(ch)) return ch.toUpperCase();
+      return ch || '#';
+    }
+    function getGyoHeaderChar(str) {
+      const ch = getExactInitialChar(str);
+      if (ch === 'クラ') return 'クラ';
+      if (/[あ-おぁ-ぉかがきぎくぐけげこご]/.test(ch)) return /[あ-おぁ-ぉ]/.test(ch) ? 'あ' : 'か';
+      if (/[さざしじすずせぜそぞ]/.test(ch)) return 'さ';
+      if (/[ただちぢつづてでとどっ]/.test(ch)) return 'た';
+      if (/[なにぬねの]/.test(ch)) return 'な';
+      if (/[はばぱひびぴふぶぷへべぺほぼぽ]/.test(ch)) return 'は';
+      if (/[まみむめも]/.test(ch)) return 'ま';
+      if (/[やゆよゃゅょ]/.test(ch)) return 'や';
+      if (/[らりるれろ]/.test(ch)) return 'ら';
+      if (/[わ-ん]/.test(ch)) return 'わ';
+      if (/[A-Za-z]/.test(ch)) return '英';
+      return '他';
+    }
+
+    function renderCopyCards() {
+      const cardList = document.getElementById('copyCardList');
+      const indexBar = document.getElementById('copyIndexBar');
+      if (!cardList || !indexBar) return;
+
+      cardList.innerHTML = '';
+      indexBar.innerHTML = '';
+
+      const orderedGroups = [];
+      copyItems.forEach(i => {
+        const gFuri = i.groupFurigana || i.group || '未分類';
+        if (!orderedGroups.includes(gFuri)) orderedGroups.push(gFuri);
+      });
+
+      const allItemEl = document.createElement('div');
+      allItemEl.className = `index-item all-item ${selectedIndexName === 'ALL' ? 'active' : ''}`;
+      allItemEl.textContent = '全';
+      allItemEl.title = 'すべてのグループを表示';
+      allItemEl.addEventListener('click', () => { selectedIndexName = 'ALL'; renderCopyCards(); });
+      indexBar.appendChild(allItemEl);
+
+      orderedGroups.forEach(groupFurigana => {
+        const items = copyItems.filter(i => (i.groupFurigana || i.group || '未分類') === groupFurigana);
+        if (items.length === 0) return;
+
+        const indexItemEl = document.createElement('div');
+        indexItemEl.className = `index-item ${selectedIndexName === groupFurigana ? 'active' : ''}`;
+        indexItemEl.textContent = groupFurigana;
+        indexItemEl.title = `「${groupFurigana}」で絞り込み（ドラッグして並び替え可能）`;
+        indexItemEl.setAttribute('draggable', 'true');
+        indexItemEl.setAttribute('data-group-furigana', groupFurigana);
+
+        indexItemEl.addEventListener('click', () => {
+          selectedIndexName = (selectedIndexName === groupFurigana) ? 'ALL' : groupFurigana;
+          renderCopyCards();
+        });
+        indexBar.appendChild(indexItemEl);
+      });
+
+      orderedGroups.forEach(groupFurigana => {
+        const items = copyItems.filter(i => (i.groupFurigana || i.group || '未分類') === groupFurigana);
+        if (items.length === 0) return;
+        if (selectedIndexName !== 'ALL' && selectedIndexName !== groupFurigana) return;
+
+        const groupCard = document.createElement('div');
+        groupCard.className = 'group-card show';
+        groupCard.setAttribute('draggable', 'true');
+        groupCard.setAttribute('data-group', groupFurigana);
+
+        const header = document.createElement('div');
+        header.className = 'group-header';
+        header.innerHTML = `<span>📂 ${escapeHTML(groupFurigana)}</span><span>(${items.length})</span>`;
+        groupCard.appendChild(header);
+
+        const itemsContainer = document.createElement('div');
+        itemsContainer.className = 'group-items-container';
+
+        items.forEach(item => {
+          const itemBlock = document.createElement('div');
+          itemBlock.className = 'item-block';
+          itemBlock.setAttribute('draggable', 'true');
+          itemBlock.setAttribute('data-id', item.id);
+          itemBlock.setAttribute('data-text', item.text);
+
+          itemBlock.innerHTML = `
+            <div class="card-header-row">
+              <div class="card-label-area">
+                <span class="drag-handle-item" title="ドラッグして移動">☰</span>
+                <span class="card-label" title="${escapeHTML(item.label)}">${escapeHTML(item.label)}</span>
+                <span class="copy-feedback">コピーしました！</span>
+              </div>
+              <div class="company-actions" style="position: relative; display: inline-block;">
+                <button class="menu-btn" onclick="toggleCopyContextMenu(event, '${item.id}')">☰</button>
+                <div class="context-menu" id="copyContextMenu-${item.id}">
+                  <button class="context-menu-item" onclick="openEditCopyModal('${item.id}')">編集</button>
+                  <button class="context-menu-item delete" onclick="deleteCopyCard('${item.id}')">削除</button>
+                </div>
+              </div>
+            </div>
+            <button class="copy-btn" onclick="executeCopyText(this)" title="${escapeHTML(item.text)}">
+              <span class="copy-btn-text">${escapeHTML(item.text)}</span>
+            </button>
+          `;
+          itemsContainer.appendChild(itemBlock);
+        });
+
+        groupCard.appendChild(itemsContainer);
+        cardList.appendChild(groupCard);
+      });
+      updateCopyGroupSuggestions();
+      initCopyDragAndDrop();
+    }
+
+    function toggleCopyContextMenu(event, id) {
+      event.stopPropagation();
+      document.querySelectorAll('.context-menu').forEach(m => { if (m.id !== `copyContextMenu-${id}`) m.classList.remove('show'); });
+      const menu = document.getElementById(`copyContextMenu-${id}`);
+      if (menu) menu.classList.toggle('show');
+    }
+
+    function initCopyDragAndDrop() {
+      const indexBar = document.getElementById('copyIndexBar');
+      if (indexBar) {
+        const indexItems = indexBar.querySelectorAll('.index-item:not(.all-item)');
+        indexItems.forEach(indexItem => {
+          indexItem.addEventListener('dragstart', (e) => {
+            e.stopPropagation();
+            indexItem.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', 'index:' + indexItem.getAttribute('data-group-furigana'));
+            e.dataTransfer.effectAllowed = 'move';
+          });
+          indexItem.addEventListener('dragend', (e) => {
+            e.stopPropagation();
+            indexItem.classList.remove('dragging');
+          });
+          indexItem.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const draggingIndex = indexBar.querySelector('.index-item.dragging');
+            if (!draggingIndex || draggingIndex === indexItem) return;
+
+            const rect = indexItem.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            if (e.clientY < midpoint) {
+              indexBar.insertBefore(draggingIndex, indexItem);
+            } else {
+              indexBar.insertBefore(draggingIndex, indexItem.nextElementSibling);
+            }
+          });
+          indexItem.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            updateGroupOrderFromIndexDOM();
+          });
+        });
+      }
+
+      const cardList = document.getElementById('copyCardList');
+      if (!cardList) return;
+      cardList.querySelectorAll('.group-card').forEach(gc => {
+        gc.addEventListener('dragstart', (e) => {
+          if (e.target !== gc && !e.target.classList.contains('group-header')) return;
+          e.stopPropagation();
+          gc.classList.add('dragging');
+          e.dataTransfer.setData('text/plain', 'group:' + gc.getAttribute('data-group'));
+        });
+        gc.addEventListener('dragend', () => gc.classList.remove('dragging'));
+        gc.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          const dg = cardList.querySelector('.group-card.dragging');
+          if (!dg || dg === gc) return;
+          const rect = gc.getBoundingClientRect();
+          if (e.clientY < rect.top + rect.height / 2) cardList.insertBefore(dg, gc);
+          else cardList.insertBefore(dg, gc.nextElementSibling);
+        });
+        gc.addEventListener('drop', (e) => { e.preventDefault(); updateCopyItemsOrderFromDOM(); });
+      });
+
+      cardList.querySelectorAll('.item-block').forEach(ib => {
+        ib.addEventListener('dragstart', (e) => {
+          e.stopPropagation();
+          ib.classList.add('dragging');
+          e.dataTransfer.setData('text/plain', 'item:' + ib.getAttribute('data-id'));
+        });
+        ib.addEventListener('dragend', () => ib.classList.remove('dragging'));
+        ib.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const di = cardList.querySelector('.item-block.dragging');
+          if (!di || di === ib) return;
+          const tc = ib.closest('.group-items-container');
+          const rect = ib.getBoundingClientRect();
+          if (e.clientY < rect.top + rect.height / 2) tc.insertBefore(di, ib);
+          else tc.insertBefore(di, ib.nextElementSibling);
+        });
+        ib.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); updateCopyItemsOrderFromDOM(); });
+      });
+    }
+
+    function updateGroupOrderFromIndexDOM() {
+      const indexBar = document.getElementById('copyIndexBar');
+      const indexItems = indexBar.querySelectorAll('.index-item:not(.all-item)');
+      const newGroupOrder = [];
+      indexItems.forEach(item => {
+        const groupName = item.getAttribute('data-group-furigana');
+        if (groupName) newGroupOrder.push(groupName);
+      });
+
+      const reorderedItems = [];
+      newGroupOrder.forEach(groupName => {
+        const itemsInGroup = copyItems.filter(i => (i.groupFurigana || i.group || '未分類') === groupName);
+        reorderedItems.push(...itemsInGroup);
+      });
+      const missingItems = copyItems.filter(i => !newGroupOrder.includes(i.groupFurigana || i.group || '未分類'));
+      copyItems = [...reorderedItems, ...missingItems];
+
+      saveCopyDataItems();
+      renderCopyCards();
+    }
+
+    function updateCopyItemsOrderFromDOM() {
+      const cardList = document.getElementById('copyCardList');
+      const ordered = [];
+      const seen = new Set();
+      cardList.querySelectorAll('.group-card').forEach(gc => {
+        const gName = gc.getAttribute('data-group');
+        gc.querySelectorAll('.item-block').forEach(ib => {
+          const id = ib.getAttribute('data-id');
+          const item = copyItems.find(i => i.id === id);
+          if (item) { item.group = gName; item.groupFurigana = gName; ordered.push(item); seen.add(id); }
+        });
+      });
+      const hidden = copyItems.filter(i => !seen.has(i.id));
+      copyItems = [...ordered, ...hidden];
+      saveCopyDataItems();
+      renderCopyCards();
+    }
+
+    function updateCopyGroupSuggestions() {
+      const gs = document.getElementById('groupSuggestions');
+      if (!gs) return;
+      const groups = [...new Set(copyItems.map(i => i.groupFurigana || i.group))];
+      gs.innerHTML = '';
+      groups.forEach(g => { const opt = document.createElement('option'); opt.value = g; gs.appendChild(opt); });
+    }
+
+    function openEditCopyModal(id) {
+      const item = copyItems.find(i => i.id === id);
+      if (!item) return;
+      editingCopyId = id;
+      document.getElementById('copyModalTitle').textContent = '項目を編集';
+      document.getElementById('saveCopyBtn').textContent = '更新する';
+      document.getElementById('inputGroupFurigana').value = item.groupFurigana || item.group || '';
+      document.getElementById('inputCopyLabel').value = item.label || '';
+      document.getElementById('inputCopyText').value = item.text || '';
+      document.getElementById('copyModalOverlay').classList.add('show');
+    }
+    function closeCopyModal() {
+      document.getElementById('copyModalOverlay').classList.remove('show');
+      editingCopyId = null;
+    }
+    function handleSaveCopy() {
+      const gFuri = document.getElementById('inputGroupFurigana').value.trim() || '未分類';
+      const label = document.getElementById('inputCopyLabel').value.trim();
+      const text = document.getElementById('inputCopyText').value.trim();
+
+      if (!label || !text) { alert('ラベルとテキストを入力してください。'); return; }
+
+      if (editingCopyId) {
+        const item = copyItems.find(i => i.id === editingCopyId);
+        if (item) { item.group = gFuri; item.groupFurigana = gFuri; item.label = label; item.text = text; }
+      } else {
+        copyItems.push({ id: Date.now().toString(), group: gFuri, groupFurigana: gFuri, label, text });
+      }
+      selectedIndexName = gFuri;
+      saveCopyDataItems();
+      renderCopyCards();
+      closeCopyModal();
+    }
+    function deleteCopyCard(id) {
+      if (confirm('削除してもよろしいですか？')) {
+        copyItems = copyItems.filter(i => i.id !== id);
+        saveCopyDataItems();
+        renderCopyCards();
+      }
+    }
+
+    function executeCopyText(button) {
+      const ib = button.closest('.item-block');
+      const text = ib.getAttribute('data-text');
+      const fb = ib.querySelector('.copy-feedback');
+      navigator.clipboard.writeText(text).then(() => {
+        fb.classList.add('show');
+        setTimeout(() => fb.classList.remove('show'), 1500);
+      });
+    }
+
+    function renderCompaniesList() {
+      const container = document.getElementById('companyListContainer');
+      const idxBar = document.getElementById('companyIndexBar');
+      if (!container || !idxBar) return;
+      container.innerHTML = ''; idxBar.innerHTML = '';
+
+      const sorted = [...companiesList].sort((a, b) => {
+        const fA = katakanaToHiragana(removeKanji(a.furigana) || a.furigana || a.company);
+        const fB = katakanaToHiragana(removeKanji(b.furigana) || b.furigana || b.company);
+        return fA.localeCompare(fB, 'ja');
+      });
+
+      const gyoSet = new Set();
+      sorted.forEach(comp => {
+        const gyo = getGyoHeaderChar(comp.furigana || comp.company);
+        gyoSet.add(gyo);
+        if (selectedCompanyInitialChar !== 'ALL' && selectedCompanyInitialChar !== gyo) return;
+
+        const row = document.createElement('div');
+        row.className = 'company-item-row';
+        row.innerHTML = `
+          <div class="company-item-header">
+            <span class="company-name-text">${escapeHTML(comp.company || '(なし)')}</span>
+            <div class="company-actions">
+              <button class="btn-edit-sub" onclick="openEditCompanyModal('${comp.id}')">編集</button>
+              <button class="btn-del-sub" onclick="deleteCompany('${comp.id}')">削除</button>
+            </div>
+          </div>
+          <div class="id-copy-box" onclick="copyDirectText('${escapeHTML(comp.accountId || '')}', this)">
+            <div class="copy-box-label">ID</div>
+            <span class="copy-box-val">${escapeHTML(comp.accountId || '(未設定)')}</span>
+            <span class="copy-feedback" style="position:absolute; right:28px;">コピー完了！</span>
+          </div>
+          <div class="email-copy-box" onclick="registerCompanyEmail('${comp.id}', this)">
+            <div class="copy-box-label">Mail</div>
+            <span class="copy-box-val">${escapeHTML(comp.email || '(未設定)')}</span>
+            <span class="copy-feedback" style="position:absolute; right:28px;">登録完了！</span>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      const allEl = document.createElement('div');
+      allEl.className = `index-item all-item ${selectedCompanyInitialChar === 'ALL' ? 'active' : ''}`;
+      allEl.textContent = '全';
+      allEl.addEventListener('click', () => { selectedCompanyInitialChar = 'ALL'; renderCompaniesList(); });
+      idxBar.appendChild(allEl);
+
+      ['あ', 'か', 'さ', 'た', 'な', 'は', 'ま', 'や', 'ら', 'わ', '英', '他'].forEach(gyo => {
+        if (!gyoSet.has(gyo)) return;
+        const el = document.createElement('div');
+        el.className = `index-item ${selectedCompanyInitialChar === gyo ? 'active' : ''}`;
+        el.textContent = gyo;
+        el.addEventListener('click', () => {
+          selectedCompanyInitialChar = (selectedCompanyInitialChar === gyo) ? 'ALL' : gyo;
+          renderCompaniesList();
+        });
+        idxBar.appendChild(el);
+      });
+    }
+
+    function openAddCompanyModal() {
+      document.getElementById('newCompanyName').value = '';
+      document.getElementById('newCompanyFurigana').value = '';
+      document.getElementById('newCompanyId').value = '';
+      document.getElementById('newEmailAddress').value = '';
+      document.getElementById('addCompanyModalOverlay').classList.add('show');
+    }
+    function closeAddCompanyModal() {
+      document.getElementById('addCompanyModalOverlay').classList.remove('show');
+    }
+
+    function openEditCompanyModal(id) {
+      const comp = companiesList.find(c => c.id === id);
+      if (!comp) return;
+      document.getElementById('editCompanyId').value = comp.id;
+      document.getElementById('editCompanyName').value = comp.company || '';
+      document.getElementById('editCompanyFurigana').value = comp.furigana || '';
+      document.getElementById('editCompanyAccountId').value = comp.accountId || '';
+      document.getElementById('editCompanyEmail').value = comp.email || '';
+      document.getElementById('editCompanyModalOverlay').classList.add('show');
+    }
+    function closeEditCompanyModal() {
+      document.getElementById('editCompanyModalOverlay').classList.remove('show');
+    }
+
+    function saveEditCompany() {
+      const id = document.getElementById('editCompanyId').value;
+      const comp = companiesList.find(c => c.id === id);
+      if (comp) {
+        comp.company = document.getElementById('editCompanyName').value.trim();
+        comp.furigana = document.getElementById('editCompanyFurigana').value.trim();
+        comp.accountId = document.getElementById('editCompanyAccountId').value.trim();
+        comp.email = document.getElementById('editCompanyEmail').value.trim();
+        saveCopyDataCompanies();
+        renderCompaniesList();
+        closeEditCompanyModal();
+        showToast('顧客情報を更新しました');
+      }
+    }
+
+    function copyDirectText(text, el) {
+      if (!text || text === '(未設定)') return;
+      const fb = el.querySelector('.copy-feedback');
+      navigator.clipboard.writeText(text).then(() => {
+        if (fb) { fb.classList.add('show'); setTimeout(() => fb.classList.remove('show'), 1500); }
+      });
+    }
+
+    function registerCompanyEmail(id, el) {
+      const comp = companiesList.find(c => c.id === id);
+      if (!comp || !comp.email || comp.email === '(未設定)') return;
+      const targetGroup = comp.company || '会社・メアド';
+      const exists = copyItems.some(i => i.group === targetGroup && i.text === comp.email);
+      if (!exists) {
+        copyItems.unshift({ id: Date.now().toString(), group: targetGroup, groupFurigana: 'クラ', label: comp.company || 'メール', text: comp.email });
+        selectedIndexName = 'クラ';
+        saveCopyDataItems();
+        renderCopyCards();
+      }
+      copyDirectText(comp.email, el);
+    }
+
+    function deleteCompany(id) {
+      if (confirm('削除しますか？')) {
+        companiesList = companiesList.filter(c => c.id !== id);
+        saveCopyDataCompanies();
+        renderCompaniesList();
+      }
+    }
+    function closeMemoModal() { document.getElementById('memoModalOverlay').classList.remove('show'); }
+
+    function exportCopyData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ version: "1.0", copyItems, companiesList }, null, 2));
+      const a = document.createElement('a');
+      a.href = dataStr; a.download = `copy_app_backup.json`;
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+    function importCopyData(e) {
+      const f = e.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = function(evt) {
+        try {
+          const imp = JSON.parse(evt.target.result);
+          if (imp.copyItems) copyItems = imp.copyItems;
+          if (imp.companiesList) companiesList = imp.companiesList;
+          saveCopyDataItems(); saveCopyDataCompanies();
+          renderCopyCards(); renderCompaniesList();
+          alert('インポート完了');
+        } catch { alert('失敗しました'); }
+        e.target.value = '';
+      };
+      r.readAsText(f);
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+    }
+
+
+    /* ================= 初期化 ＆ イベント登録 ================= */
+    document.addEventListener('DOMContentLoaded', () => {
+      loadCounterData();
+      renderCounterCards();
+      updateSwDisplay();
+
+      loadCopyData();
+      renderCopyCards();
+      renderCompaniesList();
+
+      // ハンバーガーメニュー制御
+      const hamburgerBtn = document.getElementById('hamburgerBtn');
+      const hamburgerMenu = document.getElementById('hamburgerMenu');
+      const panelTitleText = document.getElementById('panelTitleText');
+
+      hamburgerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        hamburgerMenu.classList.toggle('show');
+      });
+
+      window.addEventListener('click', () => {
+        hamburgerMenu.classList.remove('show');
+        document.querySelectorAll('.context-menu').forEach(m => m.classList.remove('show'));
+      });
+
+      // アプリビュー切り替え
+      const menuItems = hamburgerMenu.querySelectorAll('.hamburger-menu-item');
+      const counterAppView = document.getElementById('counterAppView');
+      const copyAppView = document.getElementById('copyAppView');
+      const counterActions = document.querySelector('.counter-actions');
+      const copyActions = document.querySelector('.copy-actions');
+
+      menuItems.forEach(item => {
+        item.addEventListener('click', () => {
+          menuItems.forEach(mi => mi.classList.remove('active'));
+          item.classList.add('active');
+
+          const targetApp = item.getAttribute('data-app');
+          if (targetApp === 'counter') {
+            counterAppView.classList.add('active');
+            copyAppView.classList.remove('active');
+            counterActions.style.display = 'flex';
+            copyActions.style.display = 'none';
+            panelTitleText.textContent = 'カウンター';
+          } else {
+            copyAppView.classList.add('active');
+            counterAppView.classList.remove('active');
+            copyActions.style.display = 'flex';
+            counterActions.style.display = 'none';
+            panelTitleText.textContent = 'コピーリスト';
+          }
+          hamburgerMenu.classList.remove('show');
+        });
+      });
+
+      // カウンター関連イベント
+      document.getElementById('openCounterModal').addEventListener('click', () => {
+        editingCounterId = null;
+        document.getElementById('counterModalTitle').textContent = '新しいカウンターを追加';
+        document.getElementById('saveCounterBtn').textContent = '追加する';
+        document.getElementById('inputCategory').value = '';
+        document.getElementById('inputLabel').value = '';
+        document.getElementById('inputIsCallList').checked = false;
+        toggleCallListAccordion(false);
+        document.getElementById('inputAccountName').value = '';
+        document.getElementById('inputStartDate').value = '';
+        document.getElementById('inputEndDate').value = '';
+        document.getElementById('counterModalOverlay').classList.add('show');
+      });
+      document.getElementById('inputIsCallList').addEventListener('change', (e) => toggleCallListAccordion(e.target.checked));
+      document.getElementById('saveCounterBtn').addEventListener('click', handleSaveCounter);
+      document.getElementById('counterModalOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeCounterModal(); });
+
+      document.getElementById('swStartBtn').addEventListener('click', toggleStopwatch);
+      document.getElementById('swResetBtn').addEventListener('click', resetStopwatch);
+
+      document.getElementById('exportCounterBtn').addEventListener('click', exportCounterData);
+      document.getElementById('importCounterBtn').addEventListener('click', () => document.getElementById('importCounterFileInput').click());
+      document.getElementById('importCounterFileInput').addEventListener('change', importCounterData);
+
+      // コピーアプリ関連イベント
+      document.getElementById('openCopyModal').addEventListener('click', () => {
+        editingCopyId = null;
+        document.getElementById('copyModalTitle').textContent = '新しい項目を追加';
+        document.getElementById('saveCopyBtn').textContent = '追加する';
+        document.getElementById('inputGroupFurigana').value = '';
+        document.getElementById('inputCopyLabel').value = '';
+        document.getElementById('inputCopyText').value = '';
+        document.getElementById('copyModalOverlay').classList.add('show');
+      });
+      document.getElementById('saveCopyBtn').addEventListener('click', handleSaveCopy);
+      document.getElementById('copyModalOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeCopyModal(); });
+
+      document.getElementById('openMemoModal').addEventListener('click', () => {
+        document.getElementById('memoModalOverlay').classList.add('show');
+        renderCompaniesList();
+      });
+      document.getElementById('closeMemoBtn').addEventListener('click', closeMemoModal);
+      document.getElementById('memoModalOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeMemoModal(); });
+
+      // 新規顧客追加モーダルボタン
+      document.getElementById('openAddCompanyModalBtn').addEventListener('click', openAddCompanyModal);
+      document.getElementById('addCompanyModalOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeAddCompanyModal(); });
+
+      document.getElementById('addCompanyBtn').addEventListener('click', () => {
+        const cName = document.getElementById('newCompanyName').value.trim();
+        const cFuri = document.getElementById('newCompanyFurigana').value.trim();
+        const cId = document.getElementById('newCompanyId').value.trim();
+        const cMail = document.getElementById('newEmailAddress').value.trim();
+        if (!cName && !cId && !cMail) return;
+
+        companiesList.push({ id: Date.now().toString(), company: cName, furigana: cFuri, accountId: cId, email: cMail });
+        saveCopyDataCompanies();
+        renderCompaniesList();
+        closeAddCompanyModal();
+        showToast('新規セットを追加しました');
+      });
+
+      // 編集用ポップアップの保存ボタン
+      document.getElementById('saveEditCompanyBtn').addEventListener('click', saveEditCompany);
+      document.getElementById('editCompanyModalOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeEditCompanyModal(); });
+
+      document.getElementById('exportCopyBtn').addEventListener('click', exportCopyData);
+      document.getElementById('importCopyBtn').addEventListener('click', () => document.getElementById('importCopyFileInput').click());
+      document.getElementById('importCopyFileInput').addEventListener('change', importCopyData);
+
+      // ESCキーでモーダルを閉じる
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeCounterModal();
+          closeCopyModal();
+          closeMemoModal();
+          closeAddCompanyModal();
+          closeEditCompanyModal();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
